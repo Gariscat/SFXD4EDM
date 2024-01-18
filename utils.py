@@ -2,6 +2,68 @@ import numpy as np
 import librosa
 import matplotlib.pyplot as plt
 from typing import Union
+import os
+import shutil
+
+SFX_CLASSES = [
+    ### FX
+    'glitch',
+    'impact',
+    'stab',
+    'sub_drop',
+    'sweep',
+    'lazer',
+    'alarm',
+    'white_noise',
+    'vocal_chop',
+    'dubstep_growl',
+    ### DRUMS
+    'kick',
+    'snare',
+    'open_hat',
+    'closed_hat',
+    'crash',
+    'snap',
+    'toms',
+    'clap',
+]
+
+def check_waveform_class(waveform_path: str) -> Union[str, None]:
+    waveform_path = waveform_path.lower()
+    
+    for sfx_class in SFX_CLASSES:
+        if sfx_class.lower() in waveform_path:
+            return sfx_class
+    
+    return None
+
+
+def organize_waveforms(source_dir: str, target_dir: str):
+    # Create the target directory if it doesn't exist
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+    
+    # Enumerate recursively into the source directory
+    for root, dirs, files in os.walk(source_dir):
+        for file in files:
+            category = check_waveform_class(file)
+            if file.endswith('.wav') and category is not None:
+                # Load the waveform
+                waveform, _ = librosa.core.load(os.path.join(root, file))
+                
+                # Clip the waveform
+                clipped_waveform = clip_waveform(waveform)
+                
+                # Create the subfolder in the target directory
+                category_dir = os.path.join(target_dir, category)
+                if not os.path.exists(category_dir):
+                    os.makedirs(category_dir)
+                
+                # Save the clipped waveform in the subfolder
+                target_file = os.path.join(category_dir, file)
+                librosa.output.write_wav(target_file, clipped_waveform, sr)
+
+
 
 def clip_waveform(waveform: np.ndarray, frame_length: int = 2048, threshold: float = 0.1, plot_rms: bool = False) -> np.ndarray:
     rms = librosa.feature.rms(y=waveform, frame_length=frame_length).flatten()
