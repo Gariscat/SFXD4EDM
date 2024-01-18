@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from typing import Union
 import os
 import shutil
+from tqdm import tqdm
+import soundfile as sf
 
 SFX_CLASSES = [
     ### FX
@@ -44,12 +46,12 @@ def organize_waveforms(source_dir: str, target_dir: str):
         os.makedirs(target_dir)
     
     # Enumerate recursively into the source directory
-    for root, dirs, files in os.walk(source_dir):
+    for root, dirs, files in tqdm(os.walk(source_dir), desc='Enumerating waveforms'):
         for file in files:
             category = check_waveform_class(file)
             if file.endswith('.wav') and category is not None:
                 # Load the waveform
-                waveform, _ = librosa.core.load(os.path.join(root, file))
+                waveform, sr = librosa.core.load(os.path.join(root, file))
                 
                 # Clip the waveform
                 clipped_waveform = clip_waveform(waveform)
@@ -61,7 +63,7 @@ def organize_waveforms(source_dir: str, target_dir: str):
                 
                 # Save the clipped waveform in the subfolder
                 target_file = os.path.join(category_dir, file)
-                librosa.output.write_wav(target_file, clipped_waveform, sr)
+                sf.write(target_file, clipped_waveform, sr)
 
 
 
@@ -105,5 +107,6 @@ def clip_waveform(waveform: np.ndarray, frame_length: int = 2048, threshold: flo
 
 
 if __name__ == '__main__':
-    y, sr = librosa.core.load('test.wav')
-    clip_waveform(y, threshold=0.1, plot_rms=True)
+    """y, sr = librosa.core.load('test.wav')
+    clip_waveform(y, threshold=0.1, plot_rms=True)"""
+    organize_waveforms('/Users/ca7ax/Packs', '/Users/ca7ax/Packs-Organized')
